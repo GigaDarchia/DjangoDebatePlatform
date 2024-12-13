@@ -12,3 +12,7 @@ class DebateAdmin(admin.ModelAdmin):
 @admin.register(Argument)
 class ArgumentAdmin(admin.ModelAdmin):
     pass
+
+@admin.register(Vote)
+class Vote(admin.ModelAdmin):
+    pass

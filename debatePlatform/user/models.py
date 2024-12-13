@@ -18,6 +18,7 @@ class User(AbstractUser):
     profile_picture = models.ImageField(upload_to="profile_pictures", null=True, blank=True,
                                         verbose_name=_("Profile Picture"))
     level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default="Novice", verbose_name=_("Level"))
+    wins = models.IntegerField(default=0)
 
     def level_up(self):
         previous_level = self.level

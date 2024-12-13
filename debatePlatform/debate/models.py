@@ -31,7 +31,8 @@ class Debate(models.Model):
     start_time = models.DateTimeField(verbose_name=_("Start time"))
     end_time = models.DateTimeField(verbose_name=_("End time"))
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Scheduled", verbose_name=_("Status"))
-    participants = models.ManyToManyField(User, related_name="participated_debates", verbose_name=_("Participants"), blank=True)
+    participants = models.ManyToManyField(User, related_name="participated_debates", verbose_name=_("Participants"),
+                                          blank=True)
 
     def __str__(self):
         return self.title
@@ -61,7 +62,6 @@ class Debate(models.Model):
             raise ValidationError(_("Start time must be in the future."))
 
 
-
 class Argument(models.Model):
     SIDE_CHOICES = [
         ("Pro", "Pro"),
@@ -70,13 +70,33 @@ class Argument(models.Model):
 
     text = models.TextField(verbose_name=_("Text"))
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="arguments", verbose_name=_("User"))
-    debate = models.ForeignKey(Debate, on_delete=models.CASCADE, related_name="debate_arguments", verbose_name=_("Debate"))
+    debate = models.ForeignKey(Debate, on_delete=models.CASCADE, related_name="debate_arguments",
+                               verbose_name=_("Debate"))
     side = models.CharField(max_length=3, choices=SIDE_CHOICES, verbose_name=_("Side"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
+    winner = models.BooleanField(default=False)
 
     def clean(self):
         if self.debate.status != "Ongoing":
             raise ValidationError(_("Arguments can only be submitted while the debate is ongoing."))
 
+    def vote_count(self):
+        return self.votes.count()
+
+    def has_user_voted(self, user):
+         self.votes.filter(user=user).exists()
+
     def __str__(self):
         return self.text[:100]
+
+
+class Vote(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_votes", verbose_name=_("User"))
+    argument = models.ForeignKey(Argument, on_delete=models.CASCADE, related_name="votes", verbose_name=_("Argument"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
+
+    def __str__(self):
+        return f"{self.user} vote on Argument-{self.argument_id}"
+
+    class Meta:
+        unique_together = ("user", "argument")
