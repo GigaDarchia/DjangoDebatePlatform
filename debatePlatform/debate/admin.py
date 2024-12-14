@@ -1,18 +1,65 @@
 from django.contrib import admin
-from .models import *
+from .models import Category, Debate, Argument, Vote
+
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
+    """Admin Panel Config for Category model."""
     pass
+
 
 @admin.register(Debate)
 class DebateAdmin(admin.ModelAdmin):
-    pass
+    """Admin Panel Config for Debate model."""
+    list_display = (
+        'title',
+        'category',
+        'author',
+        'created_at',
+        'start_time',
+        'end_time',
+        'status'
+    )
+    readonly_fields = (
+        'created_at',
+    )
+    list_filter = (
+        'status',
+    )
+    search_fields = (
+        'title',
+        'description'
+    )
+
 
 @admin.register(Argument)
 class ArgumentAdmin(admin.ModelAdmin):
-    pass
+    """Admin Panel Config for Argument model."""
+    list_display = (
+        'debate',
+        'user',
+        'side',
+        'vote_count',
+        'winner',
+        'created_at',
+
+    )
+    readonly_fields = (
+        'created_at',
+    )
+    list_filter = (
+        'winner',
+    )
+
 
 @admin.register(Vote)
-class Vote(admin.ModelAdmin):
-    pass
+class VoteAdmin(admin.ModelAdmin):
+    """Admin Panel Config for Vote model."""
+    list_display = (
+        "argument",
+        "user",
+        "created_at"
+    )
+    readonly_fields = (
+        "created_at",
+    )

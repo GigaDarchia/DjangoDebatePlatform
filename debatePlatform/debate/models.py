@@ -72,6 +72,7 @@ class Argument(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="arguments", verbose_name=_("User"))
     debate = models.ForeignKey(Debate, on_delete=models.CASCADE, related_name="debate_arguments",
                                verbose_name=_("Debate"))
+    vote_count = models.IntegerField(default=0, verbose_name=_("Vote count"))
     side = models.CharField(max_length=3, choices=SIDE_CHOICES, verbose_name=_("Side"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
     winner = models.BooleanField(default=False)
@@ -80,8 +81,8 @@ class Argument(models.Model):
         if self.debate.status != "Ongoing":
             raise ValidationError(_("Arguments can only be submitted while the debate is ongoing."))
 
-    def vote_count(self):
-        return self.votes.count()
+    # def vote_count(self):
+    #     return self.votes.count()
 
     def has_user_voted(self, user):
          self.votes.filter(user=user).exists()
