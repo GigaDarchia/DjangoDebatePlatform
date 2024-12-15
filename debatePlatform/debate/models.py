@@ -62,6 +62,7 @@ class Debate(models.Model):
             raise ValidationError(_("Start time must be in the future."))
 
 
+
 class Argument(models.Model):
     SIDE_CHOICES = [
         ("Pro", "Pro"),

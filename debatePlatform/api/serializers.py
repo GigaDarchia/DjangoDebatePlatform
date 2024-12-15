@@ -1,8 +1,11 @@
+from django.utils import timezone
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.utils.translation import gettext_lazy as _
-
+from debate.models import Category, Debate, Argument, Vote
 from user.models import User
+
+"""-------------------   Authentication Serializers   -------------------"""
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -22,6 +25,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         (write-only).
     :type confirm_password: serializers.CharField
     """
+
     username = serializers.CharField(
         max_length=100,
         error_messages={
@@ -54,7 +58,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):
-        if data['password'] != data['confirm_password']:
+        confirm_password = data.pop('confirm_password', None)
+        if data['password'] != confirm_password:
             raise serializers.ValidationError(
                 {
                     "password": _("Passwords do not match.")
@@ -76,7 +81,6 @@ class UserRegisterSerializer(serializers.ModelSerializer):
                     "username": _("Username already exists.")
                 }
             )
-        data.pop('confirm_password', None)
         return data
 
     def create(self, validated_data):
@@ -101,5 +105,93 @@ class UserLoginSerializer(serializers.Serializer):
     :ivar password: The password corresponding to the username.
     :type password: serializers.CharField
     """
+
     username = serializers.CharField(required=True, max_length=100)
     password = serializers.CharField(required=True, write_only=True)
+
+
+"""-------------------   User Serializers   -------------------"""
+
+
+class UserStatSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'xp', 'level', 'wins')
+
+
+"""-------------------   Debate Serializers   -------------------"""
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    """
+    Handles serialization and deserialization of Category model instances.
+    """
+
+    class Meta:
+        model = Category
+        fields = '__all__'
+
+
+class ArgumentSerializer(serializers.ModelSerializer):
+    """
+    Serializer class for the Argument model.
+    """
+
+    class Meta:
+        model = Argument
+        fields = "__all__"
+
+
+class DebateArgumentSerializer(serializers.ModelSerializer):
+    """
+    Handles the serialization of Argument model instances only for the DebateSerializer class.
+    """
+
+    class Meta:
+        model = Argument
+        fields = ['id', 'text', 'vote_count', 'side', 'created_at', 'winner', 'user']
+
+
+class DebateSerializer(serializers.ModelSerializer):
+    """
+    Handles the serialization of Debate model objects for data exchange purposes.
+
+    This serializer is used to convert Debate instances to and from JSON as part
+    of the application's API. It supports nested serialization for related fields,
+    ensuring that complex data relationships are properly represented in API
+    responses.
+    """
+
+    participants = UserStatSerializer(many=True, default=list)
+    author = UserStatSerializer()
+    category = CategorySerializer()
+    debate_arguments = DebateArgumentSerializer(many=True, default=list)
+
+    class Meta:
+        model = Debate
+        fields = ['id', 'title', 'description', 'category', 'author', 'created_at', 'start_time', 'end_time',
+                  'status', 'participants', 'debate_arguments']
+
+
+class CreateDebateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating a Debate object.
+
+    Provides validation and serialization for the Debate model, ensuring data integrity
+    and enforcing specific business rules related to start and end times.
+    """
+
+    class Meta:
+        model = Debate
+        fields = ("title", "description", "category", "start_time", "end_time")
+
+    def validate(self, data):
+        start_time = data.get('start_time')
+        end_time = data.get('end_time')
+        if start_time >= end_time:
+            raise serializers.ValidationError({"start_time": "Start time must be before end time."})
+
+        if start_time <= timezone.now():
+            raise serializers.ValidationError({"start_time": "Start time must be in the future."})
+
+        return data

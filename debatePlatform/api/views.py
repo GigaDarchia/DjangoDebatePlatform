@@ -5,10 +5,15 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from user.models import User
-from .serializers import UserRegisterSerializer, UserLoginSerializer
+from debate.models import Debate, Argument, Category, Vote
+from .serializers import UserRegisterSerializer, UserLoginSerializer, CategorySerializer, DebateSerializer, \
+    CreateDebateSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenBlacklistView
+from .serializer_utils import SerializerFactory
+from django.db import models
+from .permissions import IsOwnerOrReadOnly
 
-"""-------------------   Authentication Views   -------------------"""
+"""---------------------------------   Authentication Views   ---------------------------------------"""
 
 
 @extend_schema(tags=['Authentication'])
@@ -60,3 +65,48 @@ class CustomTokenRefreshView(TokenRefreshView):
 @extend_schema(tags=["Authentication"])
 class CustomTokenBlacklistView(TokenBlacklistView):
     permission_classes = [IsAuthenticated]
+
+
+"""---------------------------------   Debate Views   ---------------------------------------"""
+
+
+@extend_schema(tags=["Categories"])
+class CategoryListing(generics.ListAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [AllowAny]
+
+
+@extend_schema(tags=["Debates"])
+class DebateViewSet(viewsets.ModelViewSet):
+    """
+    Provides CRUD functionality for managing Debate instances.
+
+    This class leverages Django REST Framework's ModelViewSet to offer full
+    CRUD operations for the Debate model. It supports custom serializers
+    for different actions, handles dynamic permissions based on actions,
+    and annotates the queryset for additional data. This class is
+    customized to ensure that debates are created with the correct author
+    and appropriate permissions are enforced based on the action.
+    """
+    queryset = Debate.objects.select_related('category', 'author') \
+        .prefetch_related('participants', 'debate_arguments') \
+        .annotate(participant_count=models.Count('participants')) \
+        .order_by('-participant_count', '-created_at')
+
+    serializer_class = SerializerFactory(
+        default=DebateSerializer,
+        create=CreateDebateSerializer
+    )
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+    def get_permissions(self):
+        if self.action in ("update", "partial_update", "destroy"):
+            permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
+        elif self.action == "list":
+            permission_classes = [AllowAny]
+        else:
+            permission_classes = [IsAuthenticated]
+        return [permission() for permission in permission_classes]
