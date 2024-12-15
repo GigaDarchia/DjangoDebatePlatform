@@ -6,6 +6,22 @@ from user.models import User
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
+    """
+    Serializer class for handling user registration.
+
+    This serializer is used for creating a new User instance. It includes validation
+    for ensuring password consistency, email uniqueness, and username uniqueness.
+
+    :ivar username: Field for the username of the user, limited to 100 characters.
+    :type username: serializers.CharField
+    :ivar email: Field for the email address of the user.
+    :type email: serializers.EmailField
+    :ivar password: Field for the user's password.
+    :type password: serializers.CharField
+    :ivar confirm_password: Field to confirm the password during registration
+        (write-only).
+    :type confirm_password: serializers.CharField
+    """
     username = serializers.CharField(
         max_length=100,
         error_messages={
@@ -70,3 +86,20 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
         return user
+
+
+class UserLoginSerializer(serializers.Serializer):
+    """
+    Serializer for user login information.
+
+    This serializer is responsible for validating and handling user login
+    credentials, specifically the username and password provided by the user
+    during authentication.
+
+    :ivar username: The unique identifier for the user.
+    :type username: serializers.CharField
+    :ivar password: The password corresponding to the username.
+    :type password: serializers.CharField
+    """
+    username = serializers.CharField(required=True, max_length=100)
+    password = serializers.CharField(required=True, write_only=True)

@@ -50,6 +50,9 @@ class ArgumentAdmin(admin.ModelAdmin):
     list_filter = (
         'winner',
     )
+    search_fields = (
+        'text',
+    )
 
 
 @admin.register(Vote)
