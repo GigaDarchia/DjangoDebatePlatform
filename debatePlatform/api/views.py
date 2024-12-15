@@ -1,15 +1,20 @@
 from django.contrib.auth import authenticate, login
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, views, viewsets, mixins
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from user.models import User
 from .serializers import UserRegisterSerializer, UserLoginSerializer
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenBlacklistView
+
+"""-------------------   Authentication Views   -------------------"""
 
 
+@extend_schema(tags=['Authentication'])
 class UserRegisterView(generics.CreateAPIView):
     """
+
     Handles user registration by creating a new user instance.
 
     """
@@ -27,6 +32,7 @@ class UserRegisterView(generics.CreateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(tags=['Authentication'])
 class UserLoginView(TokenObtainPairView):
     """
     Handles the user login and token generation process.
@@ -44,3 +50,13 @@ class UserLoginView(TokenObtainPairView):
         response = super().post(request, *args, **kwargs)
         response.data['user_id'] = serializer.user.id
         return response
+
+
+@extend_schema(tags=["Authentication"])
+class CustomTokenRefreshView(TokenRefreshView):
+    permission_classes = [IsAuthenticated]
+
+
+@extend_schema(tags=["Authentication"])
+class CustomTokenBlacklistView(TokenBlacklistView):
+    permission_classes = [IsAuthenticated]

@@ -9,9 +9,11 @@ drf-spectacular-sidecar==2024.11.1
 inflection==0.5.1
 jsonschema==4.23.0
 jsonschema-specifications==2024.10.1
+packaging==24.2
 pillow==11.0.0
 PyJWT==2.10.1
 python-decouple==3.8
+pytz==2024.2
 PyYAML==6.0.2
 referencing==0.35.1
 rpds-py==0.21.0
