@@ -5,8 +5,8 @@ from .models import Category, Debate, Argument, Vote
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     """Admin Panel Config for Category model."""
-    pass
-
+    list_display = ("id", "name")
+    ordering = ("id",)
 
 @admin.register(Debate)
 class DebateAdmin(admin.ModelAdmin):
@@ -37,7 +37,7 @@ class ArgumentAdmin(admin.ModelAdmin):
     """Admin Panel Config for Argument model."""
     list_display = (
         'debate',
-        'user',
+        'author',
         'side',
         'vote_count',
         'winner',

@@ -113,7 +113,17 @@ class UserLoginSerializer(serializers.Serializer):
 """-------------------   User Serializers   -------------------"""
 
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'xp', 'level', 'wins')
+
+
 class UserStatSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the User model including specific fields.
+    """
+
     class Meta:
         model = User
         fields = ('id', 'username', 'xp', 'level', 'wins')
@@ -149,7 +159,23 @@ class DebateArgumentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Argument
-        fields = ['id', 'text', 'vote_count', 'side', 'created_at', 'winner', 'user']
+        fields = ['id', 'text', 'vote_count', 'side', 'created_at', 'winner', 'author']
+
+
+class CreateArgumentSerializer(serializers.ModelSerializer):
+    """
+    Serializer class for the `Argument` model to handle the creation of new instances.
+    """
+
+    class Meta:
+        model = Argument
+        fields = ('text', 'side', 'debate')
+
+    def validate(self, data):
+        debate = data.get('debate')
+        if debate.status != "Ongoing":
+            raise serializers.ValidationError({"debate": "Arguments can only be submitted while the debate is ongoing."})
+        return data
 
 
 class DebateSerializer(serializers.ModelSerializer):
@@ -194,4 +220,16 @@ class CreateDebateSerializer(serializers.ModelSerializer):
         if start_time <= timezone.now():
             raise serializers.ValidationError({"start_time": "Start time must be in the future."})
 
+        return data
+
+
+class VoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vote
+        fields = ['argument']
+
+    def validate(self, data):
+        argument = data.get('argument')
+        if argument.debate.status != "Ongoing":
+            raise serializers.ValidationError({"debate": "Arguments can only be voted while the debate is ongoing."})
         return data

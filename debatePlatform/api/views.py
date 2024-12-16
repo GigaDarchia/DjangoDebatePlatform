@@ -7,11 +7,12 @@ from rest_framework import status
 from user.models import User
 from debate.models import Debate, Argument, Category, Vote
 from .serializers import UserRegisterSerializer, UserLoginSerializer, CategorySerializer, DebateSerializer, \
-    CreateDebateSerializer
+    CreateDebateSerializer, ArgumentSerializer, CreateArgumentSerializer, VoteSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenBlacklistView
 from .serializer_utils import SerializerFactory
 from django.db import models
 from .permissions import IsOwnerOrReadOnly
+from django.db import transaction
 
 """---------------------------------   Authentication Views   ---------------------------------------"""
 
@@ -72,6 +73,9 @@ class CustomTokenBlacklistView(TokenBlacklistView):
 
 @extend_schema(tags=["Categories"])
 class CategoryListing(generics.ListAPIView):
+    """
+    Handles listing of all categories.
+    """
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [AllowAny]
@@ -105,8 +109,80 @@ class DebateViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ("update", "partial_update", "destroy"):
             permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
-        elif self.action == "list":
-            permission_classes = [AllowAny]
-        else:
+        elif self.action == "create":
             permission_classes = [IsAuthenticated]
+        else:
+            permission_classes = [AllowAny]
         return [permission() for permission in permission_classes]
+
+
+@extend_schema(tags=["Arguments"])
+class ArgumentViewSet(viewsets.ModelViewSet):
+    """
+    This class provides a viewset for handling argument-related operations.
+
+    ArgumentViewSet allows users to perform CRUD operations on Argument objects.
+    It utilizes serializers for input/output, and permission classes to enforce
+    access control. The queryset is optimized through related field selection
+    and prefetching, ensuring efficient database queries.
+    """
+
+    queryset = Argument.objects.select_related('debate', 'author') \
+        .prefetch_related('votes') \
+        .order_by('-vote_count', '-created_at')
+    serializer_class = SerializerFactory(
+        default=ArgumentSerializer,
+        create=CreateArgumentSerializer
+    )
+
+    def get_permissions(self):
+        if self.action in ('update', 'partial_update', 'destroy'):
+            permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
+        elif self.action == 'create':
+            permission_classes = [IsAuthenticated]
+        else:
+            permission_classes = [AllowAny]
+        return [permission() for permission in permission_classes]
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+
+@extend_schema(tags=["Votes"])
+class VoteView(generics.CreateAPIView):
+    """
+    Handles voting functionality for an argument.
+
+    VoteView allows authenticated users to vote on an argument.
+    When a vote is cast for the first time, it adds the vote.
+    If a user revotes (casts a vote on an argument they have already voted for),
+    their previous vote is removed. The voting also updates the vote count for
+    the argument and adjusts the experience points (xp) of the argument author.
+    """
+    serializer_class = SerializerFactory(
+        default=VoteSerializer
+    )
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+        argument = serializer.validated_data['argument']
+
+        vote = Vote.objects.filter(argument=argument, user=user).first()
+        with transaction.atomic():
+            if vote:
+                vote.delete()
+                message = "Your vote was removed!"
+                Argument.objects.filter(id=argument.id).update(vote_count=models.F('vote_count') - 1)
+                User.objects.filter(id=argument.author.id).update(xp=models.F('xp') - 2)
+            else:
+                Vote.objects.create(argument=argument, user=user)
+                message = "Your vote was added!"
+                Argument.objects.filter(id=argument.id).update(vote_count=models.F('vote_count') + 1)
+                User.objects.filter(id=argument.author.id).update(xp=models.F('xp') + 2)
+
+        return Response({"message": message}, status=status.HTTP_200_OK)

@@ -70,7 +70,7 @@ class Argument(models.Model):
     ]
 
     text = models.TextField(verbose_name=_("Text"))
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="arguments", verbose_name=_("User"))
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="arguments", verbose_name=_("Author"))
     debate = models.ForeignKey(Debate, on_delete=models.CASCADE, related_name="debate_arguments",
                                verbose_name=_("Debate"))
     vote_count = models.IntegerField(default=0, verbose_name=_("Vote count"))
