@@ -1,17 +1,18 @@
-from django.contrib.auth import authenticate, login
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, views, viewsets, mixins
+from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from user.models import User
 from debate.models import Debate, Argument, Category, Vote
-from .serializers import UserRegisterSerializer, UserLoginSerializer, CategorySerializer, DebateSerializer, \
-    CreateDebateSerializer, ArgumentSerializer, CreateArgumentSerializer, VoteSerializer
+from .serializers import UserRegisterSerializer, CategorySerializer, DebateSerializer, \
+    CreateDebateSerializer, ArgumentSerializer, CreateArgumentSerializer, VoteSerializer, UserSerializer, \
+    UpdateDebateSerializer, UserStatSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenBlacklistView
 from .serializer_utils import SerializerFactory
 from django.db import models
-from .permissions import IsOwnerOrReadOnly
+from .permissions import IsOwnerOrModeratorOrReadOnly
 from django.db import transaction
 
 """---------------------------------   Authentication Views   ---------------------------------------"""
@@ -49,6 +50,7 @@ class UserLoginView(TokenObtainPairView):
 
     """
     serializer_class = TokenObtainPairView.serializer_class
+    permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -100,6 +102,8 @@ class DebateViewSet(viewsets.ModelViewSet):
 
     serializer_class = SerializerFactory(
         default=DebateSerializer,
+        update=UpdateDebateSerializer,
+        partial_update=UpdateDebateSerializer,
         create=CreateDebateSerializer
     )
 
@@ -108,7 +112,7 @@ class DebateViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ("update", "partial_update", "destroy"):
-            permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
+            permission_classes = [IsOwnerOrModeratorOrReadOnly, IsAuthenticated]
         elif self.action == "create":
             permission_classes = [IsAuthenticated]
         else:
@@ -117,7 +121,7 @@ class DebateViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["Arguments"])
-class ArgumentViewSet(viewsets.ModelViewSet):
+class ArgumentViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     """
     This class provides a viewset for handling argument-related operations.
 
@@ -137,7 +141,7 @@ class ArgumentViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ('update', 'partial_update', 'destroy'):
-            permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
+            permission_classes = [IsOwnerOrModeratorOrReadOnly, IsAuthenticated]
         elif self.action == 'create':
             permission_classes = [IsAuthenticated]
         else:
@@ -186,3 +190,11 @@ class VoteView(generics.CreateAPIView):
                 User.objects.filter(id=argument.author.id).update(xp=models.F('xp') + 2)
 
         return Response({"message": message}, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=["User"])
+class UserRetrieveView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserStatSerializer
+    permission_classes = [IsOwnerOrModeratorOrReadOnly]
+

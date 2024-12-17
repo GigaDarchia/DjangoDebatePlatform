@@ -1,11 +1,13 @@
 from django.urls import path, include
-from .views import UserRegisterView, UserLoginView, CustomTokenRefreshView, CustomTokenBlacklistView, CategoryListing, DebateViewSet, ArgumentViewSet, \
-    VoteView
+from .views import UserRegisterView, UserLoginView, CustomTokenRefreshView, CustomTokenBlacklistView, CategoryListing, \
+    DebateViewSet, ArgumentViewSet, \
+    VoteView, UserRetrieveView
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register('debates', DebateViewSet, basename='debates')
 router.register('arguments', ArgumentViewSet, basename='arguments')
+router.register('user', UserRetrieveView, basename='user')
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -4,6 +4,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.utils.translation import gettext_lazy as _
 from debate.models import Category, Debate, Argument, Vote
 from user.models import User
+from datetime import timedelta
 
 """-------------------   Authentication Serializers   -------------------"""
 
@@ -174,7 +175,8 @@ class CreateArgumentSerializer(serializers.ModelSerializer):
     def validate(self, data):
         debate = data.get('debate')
         if debate.status != "Ongoing":
-            raise serializers.ValidationError({"debate": "Arguments can only be submitted while the debate is ongoing."})
+            raise serializers.ValidationError(
+                {"debate": "Arguments can only be submitted while the debate is ongoing."})
         return data
 
 
@@ -221,6 +223,31 @@ class CreateDebateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"start_time": "Start time must be in the future."})
 
         return data
+
+
+class UpdateDebateSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=255)
+    description = serializers.CharField()
+    start_time = serializers.DateTimeField()
+    end_time = serializers.DateTimeField()
+
+    def validate(self, data):
+        title = data.get('title')
+        description = data.get('description')
+        start_time = data.get('start_time')
+        end_time = data.get('end_time')
+
+        if timezone.now() >= start_time - timedelta(minutes=30):
+            raise serializers.ValidationError(
+                {"message": "You can't edit the content when there's less than 30 minutes left."})
+
+        if start_time >= end_time:
+            raise serializers.ValidationError(
+                {"start_time": "Start time must be before end time"})
+
+        if start_time <= timezone.now():
+            raise serializers.ValidationError(
+                {"start_time": "Start time must be in the future."})
 
 
 class VoteSerializer(serializers.ModelSerializer):

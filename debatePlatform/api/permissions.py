@@ -1,7 +1,7 @@
 from rest_framework import permissions
 
 
-class IsOwnerOrReadOnly(permissions.BasePermission):
+class IsOwnerOrModeratorOrReadOnly(permissions.BasePermission):
     """
 
     Custom permission to only allow owners of an object to edit or delete it.
@@ -12,4 +12,4 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        return obj.author == request.user
+        return obj.author == request.user or request.user.is_staff
