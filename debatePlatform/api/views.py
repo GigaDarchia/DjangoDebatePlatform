@@ -14,6 +14,7 @@ from .serializer_utils import SerializerFactory
 from django.db import models
 from .permissions import IsOwnerOrModeratorOrReadOnly
 from django.db import transaction
+from rest_framework.throttling import ScopedRateThrottle
 
 """---------------------------------   Authentication Views   ---------------------------------------"""
 
@@ -25,8 +26,10 @@ class UserRegisterView(generics.CreateAPIView):
     Handles user registration by creating a new user instance.
 
     """
+    throttle_classes = [ScopedRateThrottle]
     serializer_class = UserRegisterSerializer
     permission_classes = [AllowAny]
+    throttle_scope = 'auth'
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -51,6 +54,8 @@ class UserLoginView(TokenObtainPairView):
     """
     serializer_class = TokenObtainPairView.serializer_class
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'auth'
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -63,11 +68,15 @@ class UserLoginView(TokenObtainPairView):
 @extend_schema(tags=["Authentication"])
 class CustomTokenRefreshView(TokenRefreshView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'token_refresh'
 
 
 @extend_schema(tags=["Authentication"])
 class CustomTokenBlacklistView(TokenBlacklistView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'token_blacklist'
 
 
 """---------------------------------   Debate Views   ---------------------------------------"""
@@ -81,6 +90,8 @@ class CategoryListing(generics.ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [AllowAny]
+    throttle_scope = 'general'
+    throttle_classes = [ScopedRateThrottle]
 
 
 @extend_schema(tags=["Debates"])
@@ -106,6 +117,8 @@ class DebateViewSet(viewsets.ModelViewSet):
         partial_update=UpdateDebateSerializer,
         create=CreateDebateSerializer
     )
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'general'
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -121,7 +134,8 @@ class DebateViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["Arguments"])
-class ArgumentViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+class ArgumentViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin,
+                      mixins.DestroyModelMixin, viewsets.GenericViewSet):
     """
     This class provides a viewset for handling argument-related operations.
 
@@ -138,6 +152,8 @@ class ArgumentViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.C
         default=ArgumentSerializer,
         create=CreateArgumentSerializer
     )
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'general'
 
     def get_permissions(self):
         if self.action in ('update', 'partial_update', 'destroy'):
@@ -167,6 +183,8 @@ class VoteView(generics.CreateAPIView):
         default=VoteSerializer
     )
     permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'vote'
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -194,7 +212,11 @@ class VoteView(generics.CreateAPIView):
 
 @extend_schema(tags=["User"])
 class UserRetrieveView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    """
+    Handles the retrieval of user details.
+    """
     queryset = User.objects.all()
     serializer_class = UserStatSerializer
     permission_classes = [IsOwnerOrModeratorOrReadOnly]
-
+    throttle_scope = 'general'
+    throttle_classes = [ScopedRateThrottle]

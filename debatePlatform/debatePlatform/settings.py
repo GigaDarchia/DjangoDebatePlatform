@@ -141,6 +141,13 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+    'DEFAULT_THROTTLE_RATES': {
+        'auth': '10/hour',
+        'general': '1000/day',
+        'token_refresh': '5/hour',
+        'token_blacklist': '2/hour',
+        'vote': '200/day'
+    },
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
