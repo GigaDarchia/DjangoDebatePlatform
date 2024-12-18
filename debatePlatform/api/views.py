@@ -1,3 +1,4 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, views, viewsets, mixins
 from rest_framework.decorators import permission_classes
@@ -15,6 +16,8 @@ from django.db import models
 from .permissions import IsOwnerOrModeratorOrReadOnly
 from django.db import transaction
 from rest_framework.throttling import ScopedRateThrottle
+from .filters import DebateFilter
+from rest_framework.filters import SearchFilter
 
 """---------------------------------   Authentication Views   ---------------------------------------"""
 
@@ -120,6 +123,10 @@ class DebateViewSet(viewsets.ModelViewSet):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = 'general'
 
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_class = DebateFilter
+    search_fields = ['title', 'description']
+
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
@@ -220,3 +227,36 @@ class UserRetrieveView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     permission_classes = [IsOwnerOrModeratorOrReadOnly]
     throttle_scope = 'general'
     throttle_classes = [ScopedRateThrottle]
+    lookup_field = 'username'
+
+
+@extend_schema(tags=["Debates"])
+class JoinDebateView(views.APIView):
+    """
+    Handles requests to join a debate.
+
+    This view enables authenticated users to join ongoing debates. It ensures that
+    only debates with an ongoing status can be joined, and prevents users who are
+    already participants of a debate from joining again. Upon successful joining,
+    the user is added to the list of participants for the debate.
+    """
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'join_debate'
+
+    def post(self, request, debate_id):
+        try:
+            debate = Debate.objects.get(id=debate_id)
+        except Debate.DoesNotExist:
+            return Response({"message": "Debate not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if debate.status != "Ongoing":
+            return Response({"message": "Debate is not ongoing."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if request.user in debate.participants.all():
+            return Response({"message": "You are already in the debate."}, status=status.HTTP_400_BAD_REQUEST)
+
+        debate.participants.add(request.user)
+        debate.save()
+
+        return Response({"message": "You have joined the debate."}, status=status.HTTP_200_OK)

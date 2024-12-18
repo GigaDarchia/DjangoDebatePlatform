@@ -177,6 +177,9 @@ class CreateArgumentSerializer(serializers.ModelSerializer):
         if debate.status != "Ongoing":
             raise serializers.ValidationError(
                 {"debate": "Arguments can only be submitted while the debate is ongoing."})
+        if self.context['request'].user not in debate.participants.all():
+            raise serializers.ValidationError(
+                {"debate": "You can't submit arguments to a debate you're not participating in."})
         return data
 
 

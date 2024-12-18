@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',
     'drf_spectacular_sidecar',
+    'django_filters',
     'corsheaders',
     'user',
     'api',
@@ -146,7 +147,8 @@ REST_FRAMEWORK = {
         'general': '1000/day',
         'token_refresh': '5/hour',
         'token_blacklist': '2/hour',
-        'vote': '200/day'
+        'vote': '200/day',
+        'join_debate': '5/hour'
     },
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }

@@ -1,7 +1,7 @@
 from django.urls import path, include
 from .views import UserRegisterView, UserLoginView, CustomTokenRefreshView, CustomTokenBlacklistView, CategoryListing, \
     DebateViewSet, ArgumentViewSet, \
-    VoteView, UserRetrieveView
+    VoteView, UserRetrieveView, JoinDebateView
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
@@ -18,4 +18,5 @@ urlpatterns = [
     path('token/blacklist/', CustomTokenBlacklistView.as_view(), name='token_blacklist'),
     path('categories/', CategoryListing.as_view(), name='categories'),
     path('vote/', VoteView.as_view(), name='vote'),
+    path('debates/<int:debate_id>/join/', JoinDebateView.as_view(), name='join_debate'),
 ]
