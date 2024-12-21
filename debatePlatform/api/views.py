@@ -48,24 +48,14 @@ class UserRegisterView(generics.CreateAPIView):
 @extend_schema(tags=['Authentication'])
 class UserLoginView(TokenObtainPairView):
     """
-    Handles the user login and token generation process.
-
-    Provides an endpoint for users to log in and obtain authentication tokens. This view
-    extends the functionality of `TokenObtainPairView`. Upon successful login, it adds the
-    user's ID to the response data, allowing the client to link the token to a specific user.
-
+    This class ensures unrestricted access to the login endpoint by overriding
+    permission_classes and also applies defined throttling limits with a specific
+    scope for authentication purposes.
     """
-    serializer_class = TokenObtainPairView.serializer_class
+
     permission_classes = [AllowAny]
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = 'auth'
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        response = super().post(request, *args, **kwargs)
-        response.data['user_id'] = serializer.user.id
-        return response
 
 
 @extend_schema(tags=["Authentication"])
@@ -250,10 +240,10 @@ class JoinDebateView(views.APIView):
         except Debate.DoesNotExist:
             return Response({"message": "Debate not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        if debate.status != "Ongoing":
-            return Response({"message": "Debate is not ongoing."}, status=status.HTTP_400_BAD_REQUEST)
+        if debate.status in ("Finished", "Cancelled"):
+            return Response({"message": "Debate is already finished/cancelled."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if request.user in debate.participants.all():
+        if request.user in debate.participants.prefetch_related('debate_arguments'):
             return Response({"message": "You are already in the debate."}, status=status.HTTP_400_BAD_REQUEST)
 
         debate.participants.add(request.user)

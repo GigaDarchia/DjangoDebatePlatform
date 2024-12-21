@@ -38,18 +38,17 @@ class Debate(models.Model):
         return self.title
 
     def update_status(self):
-        pass
-        # previous_status = self.status
-        #
-        # if timezone.now() < self.start_time:
-        #     self.status = "Scheduled"
-        # elif self.start_time <= timezone.now() < self.end_time:
-        #     self.status = "Ongoing"
-        # elif self.end_time <= timezone.now():
-        #     self.status = "Finished"
-        #
-        # if previous_status != self.status:
-        #     self.save()
+        previous_status = self.status
+
+        if timezone.now() < self.start_time:
+            self.status = "Scheduled"
+        elif self.start_time <= timezone.now() < self.end_time:
+            self.status = "Ongoing"
+        elif self.end_time <= timezone.now():
+            self.status = "Finished"
+
+        if previous_status != self.status:
+            self.save()
 
     def cancel_debate(self):
         self.status = "Canceled"
