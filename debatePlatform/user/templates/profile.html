@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ user.username }}'s Profile - Debate Platform{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                {% else %}
+                    <img src="{% static 'default_profile.png' %}" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                {% endif %}
+                <h3>{{ user.username }}</h3>
+                <p class="text-muted">{{ user.level }}</p>
+                <div class="progress mb-3">
+                    <div class="progress-bar" role="progressbar" style="width: {{ user.xp }}%" aria-valuenow="{{ user.xp }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <p>XP: {{ user.xp }} | Wins: {{ user.wins }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h4>Recent Debates</h4>
+                <div class="list-group">
+                    {% for debate in user.participated_debates.all|slice:":5" %}
+                        <a href="{% url 'debate_detail' debate.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">{{ debate.title }}</h5>
+                                <small class="text-muted">{{ debate.created_at|timesince }} ago</small>
+                            </div>
+                            <p class="mb-1">{{ debate.description|truncatewords:20 }}</p>
+                            <small class="text-muted">{{ debate.status }}</small>
+                        </a>
+                    {% empty %}
+                        <p class="text-muted">No debates participated in yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

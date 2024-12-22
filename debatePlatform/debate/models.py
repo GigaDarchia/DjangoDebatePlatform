@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from user.models import User
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-
+from django.db import transaction
 
 class Category(models.Model):
     name = models.CharField(max_length=30, verbose_name=_("Name"))
@@ -54,12 +54,30 @@ class Debate(models.Model):
         self.status = "Canceled"
         self.save()
 
+    def finish_debate(self):
+        winner = self.debate_arguments.select_related('author').order_by('-vote_count').first()
+        if not winner:
+            return
+
+        reward_xp = 150
+
+        with transaction.atomic():
+            winner.winner = True
+            winner.author.xp += reward_xp
+            winner.author.wins += 1
+            winner.author.save()
+            winner.save()
+
+
     def clean(self):
+        if not self.start_time or not self.end_time:
+            raise ValidationError(_("Start time and end time must be set."))
+
         if self.end_time <= self.start_time:
             raise ValidationError(_("End time must be after start time."))
+
         elif self.start_time <= timezone.now():
             raise ValidationError(_("Start time must be in the future."))
-
 
 
 class Argument(models.Model):
@@ -77,15 +95,8 @@ class Argument(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
     winner = models.BooleanField(default=False)
 
-    def clean(self):
-        if self.debate.status != "Ongoing":
-            raise ValidationError(_("Arguments can only be submitted while the debate is ongoing."))
-
-    # def vote_count(self):
-    #     return self.votes.count()
-
     def has_user_voted(self, user):
-         self.votes.filter(user=user).exists()
+        self.votes.filter(user=user).exists()
 
     def __str__(self):
         return self.text[:100]

@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create Debate - Debate Platform{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h2 class="card-title mb-0">Create New Debate</h2>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" class="form-control {% if form.title.errors %}is-invalid{% endif %}"
+                               id="title" name="title" required
+                               value="{{ form.title.value|default:'' }}">
+                        {% if form.title.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.title.errors|join:", " }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control {% if form.description.errors %}is-invalid{% endif %}"
+                                id="description" name="description" rows="4" required>{{ form.description.value|default:'' }}</textarea>
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.description.errors|join:", " }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category</label>
+                        <select class="form-select {% if form.category.errors %}is-invalid{% endif %}"
+                                id="category" name="category" required>
+                            <option value="">Select a category</option>
+                            {% for category in categories %}
+                                <option value="{{ category.id }}"
+                                    {% if form.category.value|stringformat:"i" == category.id|stringformat:"i" %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if form.category.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.category.errors|join:", " }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="start_time" class="form-label">Start Time</label>
+                                <input type="datetime-local"
+                                       class="form-control {% if form.start_time.errors %}is-invalid{% endif %}"
+                                       id="start_time" name="start_time" required
+                                       value="{{ form.start_time.value|date:'Y-m-d\TH:i' }}">
+                                {% if form.start_time.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.start_time.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="end_time" class="form-label">End Time</label>
+                                <input type="datetime-local"
+                                       class="form-control {% if form.end_time.errors %}is-invalid{% endif %}"
+                                       id="end_time" name="end_time" required
+                                       value="{{ form.end_time.value|date:'Y-m-d\TH:i' }}">
+                                {% if form.end_time.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.end_time.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Create Debate</button>
+                        <a href="{% url 'debate_listing' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

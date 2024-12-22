@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Debates - Debate Platform{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>Debates</h2>
+    </div>
+    <div class="col-md-4 text-end">
+        {% if user.is_authenticated %}
+            <a href="{% url 'create_debate' %}" class="btn btn-primary">Create New Debate</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Filter Debates</h5>
+            </div>
+            <div class="card-body">
+                <form method="get">
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            <option value="">All</option>
+                            <option value="Scheduled">Scheduled</option>
+                            <option value="Ongoing">Ongoing</option>
+                            <option value="Finished">Finished</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select name="category" class="form-select">
+                            <option value="">All</option>
+                            {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        <div class="row">
+            {% for debate in debates %}
+                <div class="col-md-6 mb-4">
+                    <div class="card debate-card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ debate.title }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                {{ debate.category.name }} | {{ debate.status }}
+                            </h6>
+                            <p class="card-text">{{ debate.description|truncatewords:30 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    Created by {{ debate.author.username }}
+                                </small>
+                                <a href="{% url 'debate_detail' debate.id %}" class="btn btn-outline-primary">View Debate</a>
+                            </div>
+                        </div>
+                        <div class="card-footer text-muted">
+                            <small>Participants: {{ debate.participant_count }}</small>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col">
+                    <p class="text-center">No debates found.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

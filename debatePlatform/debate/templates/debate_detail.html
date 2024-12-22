@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ debate.title }} - Debate Platform{% endblock %}
+
+{% block content %}
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">{{ debate.title }}</h2>
+            <span class="badge {% if debate.status == 'Ongoing' %}bg-success{% elif debate.status == 'Scheduled' %}bg-primary{% else %}bg-secondary{% endif %}">
+            {{ debate.status }}
+        </span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <p class="lead">{{ debate.description }}</p>
+                    <p class="text-muted">
+                        Category: {{ debate.category.name }} |
+                        Created by: {{ debate.author.username }}
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Debate Details</h5>
+                            <p class="mb-1"><strong>Start Time:</strong> {{ debate.start_time }}</p>
+                            <p class="mb-1"><strong>End Time:</strong> {{ debate.end_time }}</p>
+                            <p class="mb-1"><strong>Participants:</strong> {{ debate.participants.count }}</p>
+                            {% if debate.status != "Finished" and user.is_authenticated and user not in debate.participants.all %}
+                                <form method="post" action="{% url 'join' debate.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-primary mt-3 w-100">Join Debate</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    {% if debate.status == "Finished" %}
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h3 class="mb-0">Debate Results</h3>
+            </div>
+            <div class="card-body">
+                {% with winning_argument=debate.debate_arguments.all|dictsort:"vote_count"|last %}
+                    {% if winning_argument %}
+                        <div class="text-center mb-4">
+                            <div class="display-6 mb-3">Winning Argument</div>
+                            <div class="badge {% if winning_argument.side == 'Pro' %}bg-success{% else %}bg-danger{% endif %} fs-5 p-2 mb-4">
+                                {{ winning_argument.side }} Side
+                            </div>
+                        </div>
+
+                        <div class="argument {% if winning_argument.side == 'Pro' %}pro-argument{% else %}con-argument{% endif %} shadow p-4">
+                            <p class="fs-4 mb-4">{{ winning_argument.text }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="fs-5">By {{ winning_argument.author.username }}</span>
+                                </div>
+                                <div>
+                                    <span class="badge bg-primary fs-5">{{ winning_argument.vote_count }} votes</span>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center">
+                            <p class="fs-4">No arguments were submitted in this debate.</p>
+                        </div>
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    {% endif %}
+    {% if debate.status == "Ongoing" and user in debate.participants.all %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Submit Your Argument</h4>
+                <form method="post" action="{% url 'create_argument' debate_id=debate.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="debate" value="{{ debate.id }}">
+                    <div class="mb-3">
+                        <label class="form-label">Your Position</label>
+                        <select name="side" class="form-select">
+                            <option value="Pro">Pro</option>
+                            <option value="Con">Con</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Your Argument</label>
+                        <textarea name="text" class="form-control" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit Argument</button>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-6">
+            <h3>Pro Arguments</h3>
+            {% for argument in debate.debate_arguments.all %}
+                {% if argument.side == 'Pro' %}
+                    <div class="argument pro-argument">
+                        <p>{{ argument.text }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">By {{ argument.author.username }}</small>
+                            <div>
+                            <span class="vote-button" data-argument-id="{{ argument.id }}">
+                                <i class="fas fa-arrow-up"></i>
+                            </span>
+                                <span class="ms-1">{{ argument.vote_count }} votes</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <div class="col-md-6">
+            <h3>Con Arguments</h3>
+            {% for argument in debate.debate_arguments.all %}
+                {% if argument.side == 'Con' %}
+                    <div class="argument con-argument">
+                        <p>{{ argument.text }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">By {{ argument.author.username }}</small>
+                            <div>
+                            <span class="vote-button" data-argument-id="{{ argument.id }}">
+                                <i class="fas fa-arrow-up"></i>
+                            </span>
+                                <span class="ms-1">{{ argument.vote_count }} votes</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

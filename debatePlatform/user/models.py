@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.db import models
 
@@ -14,6 +15,7 @@ class User(AbstractUser):
 
     first_name = None
     last_name = None
+    slug = models.SlugField(unique=True, verbose_name=_("Slug"))
     xp = models.IntegerField(default=0)
     profile_picture = models.ImageField(upload_to="profile_pictures", null=True, blank=True,
                                         verbose_name=_("Profile Picture"))
@@ -39,3 +41,9 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.username)
+        
+        super().save(*args, **kwargs)
