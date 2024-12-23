@@ -217,7 +217,7 @@ class UserRetrieveView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     permission_classes = [IsOwnerOrModeratorOrReadOnly]
     throttle_scope = 'general'
     throttle_classes = [ScopedRateThrottle]
-    lookup_field = 'username'
+    lookup_field = 'slug'
 
 
 @extend_schema(tags=["Debates"])

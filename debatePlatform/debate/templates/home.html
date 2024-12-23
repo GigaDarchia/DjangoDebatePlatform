@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container">
+        <!-- Search Section -->
+        <div class="row mb-4">
+            <div class="col-md-8 mx-auto">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="input-group">
+                            <form action="{% url 'search' %}" method="get" class="form-inline w-100">
+                                <div class="input-group">
+                                    <input type="text" name="query" class="form-control"
+                                           placeholder="Search debates...">
+                                    <div class="input-group-append">
+                                        <button class="btn btn-primary" type="submit">
+                                            <i class="fas fa-search"></i> Search
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content and Leaderboards -->
+        <div class="row">
+            <!-- Debates Section -->
+            <div class="col-lg-8">
+                <!-- New Debates -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">New Debates</h3>
+                        <a href="{% url 'debate_listing' %}" class="btn btn-light btn-sm">View All</a>
+                    </div>
+                    <div class="card-body">
+                        {% for debate in latest_debates %}
+                            <a href="{% url 'debate_detail' debate.id %}"
+                               style="text-decoration: none; color: inherit;">
+                                <div class="debate-card mb-3 p-3 border rounded">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <h4>{{ debate.title }}</h4>
+                                        <span class="badge bg-info">New</span>
+                                    </div>
+                                    <p class="text-muted mb-2">{{ debate.category }} • {{ debate.participant_count }}
+                                        participants</p>
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-muted">Starting in {{ debate.start_time|timeuntil }}</small>
+                                    </div>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Active Debates -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">Active Debates</h3>
+                        <a href="{% url 'debate_listing' %}" class="btn btn-light btn-sm">View All</a>
+                    </div>
+                    <div class="card-body">
+                        {% for debate in active_debates %}
+                            <a href="{% url 'debate_detail' debate.id %}"
+                               style="text-decoration: none; color: inherit;">
+                                <div class="debate-card mb-3 p-3 border rounded">
+                                    <h4>{{ debate.title }}</h4>
+                                    <p class="text-muted mb-2">{{ debate.category }} • {{ debate.participant_count }}
+                                        participants</p>
+                                    <!-- <div class="progress mb-2" style="height: 5px;">
+                                        <div class="progress-bar bg-success" style="width: 65%"></div>
+                                    </div> -->
+                                    <small class="text-muted">{{ debate.end_time|timeuntil }} remaining</small>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Trending Debates -->
+                <div class="card">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">Trending Debates</h3>
+                        <a href="{% url 'debate_listing' %}" class="btn btn-light btn-sm">View All</a>
+                    </div>
+                    <div class="card-body">
+                        {% for debate in trending_debates %}
+                            <a href="{% url 'debate_detail' debate.id %}"
+                               style="text-decoration: none; color: inherit;">
+                                <div class="debate-card mb-3 p-3 border rounded">
+                                    <h4>{{ debate.title }}</h4>
+                                    <p class="text-muted mb-2">{{ debate.category }} • {{ debate.participant_count }}
+                                        participants</p>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="badge bg-info">Trending 🔥</span>
+                                        <span class="text-muted">
+                                            {% if debate.status == "Scheduled" %}
+                                                Starts in {{ debate.start_time|timeuntil }}
+                                            {% else %}
+                                                {{ debate.end_time|timeuntil }} remaining
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaderboards Section -->
+            <div class="col-lg-4">
+                <!-- Wins Leaderboard -->
+                <div class="card mb-4">
+                    <div class="card-header bg-warning">
+                        <h4 class="mb-0">Top Debaters by Wins</h4>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            {% for user in win_leaderboard %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-warning me-2"
+                                              style="background-color: {% if forloop.counter == 1 %}#efbf04{% elif forloop.counter == 2 %}#c4c4c4{% elif forloop.counter == 3 %}#ce8946{% else %}white{% endif %} !important;
+                                                      color: {% if forloop.counter <= 3 %}white{% else %}black{% endif %};">
+                                            {{ forloop.counter }}
+                                        </span>
+                                        <span><a href="{% url 'profile' user.slug %}"
+                                                 class="user_link">{{ user.username }} </a></span>
+                                    </div>
+                                    <span class="badge bg-primary">{{ user.wins }} wins</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- XP Leaderboard -->
+                <div class="card">
+                    <div class="card-header bg-info">
+                        <h4 class="mb-0">Top Debaters by XP</h4>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            {% for user in xp_leaderboard %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-warning me-2"
+                                              style="background-color: {% if forloop.counter == 1 %}#efbf04{% elif forloop.counter == 2 %}#c4c4c4{% elif forloop.counter == 3 %}#ce8946{% else %}white{% endif %} !important;
+                                                      color: {% if forloop.counter <= 3 %}white{% else %}black{% endif %};">
+                                            {{ forloop.counter }}
+                                        </span>
+                                        <span><a href="{% url 'profile' user.slug %}"
+                                                 class="user_link">{{ user.username }} </a></span>
+                                    </div>
+                                    <span class="badge bg-success">{{ user.xp }} XP</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

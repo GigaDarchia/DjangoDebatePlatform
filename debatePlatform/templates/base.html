@@ -70,12 +70,22 @@
         .dropdown-menu {
             margin-top: 0;
         }
+
+        .user_link {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .user_link:hover {
+            text-decoration: underline;
+            color: inherit;
+        }
     </style>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
     <div class="container">
-        <a class="navbar-brand" href="#">Debate Platform</a>
+        <a class="navbar-brand" href="{% url 'home' %}">Debate Platform</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -93,7 +103,7 @@
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                             {% for category in categories %}
                                 <li>
-                                    <a class="dropdown-item" href="#">
+                                    <a class="dropdown-item" href="{% url 'category' category.slug %}">
                                         {{ category.name }}
                                     </a>
                                 </li>

@@ -5,7 +5,8 @@ from .models import Category, Debate, Argument, Vote
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     """Admin Panel Config for Category model."""
-    list_display = ("id", "name")
+    list_display = ("id", "name", "slug")
+    list_editable = ("name", "slug")
     ordering = ("id",)
 
 @admin.register(Debate)

@@ -6,11 +6,12 @@ from django.contrib.auth.views import LoginView
 from .forms import SignUpForm
 from .models import User
 
-class ProfileView(LoginRequiredMixin, generic.DetailView):
+class ProfileView(generic.DetailView):
     model = User
     template_name = 'profile.html'
     slug_field = 'slug'
     slug_url_kwarg = 'user_slug'
+    context_object_name = 'profile_user'
 
 
 class LogInView(LoginView):

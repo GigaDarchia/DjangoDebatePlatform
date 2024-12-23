@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from user.models import User
 from django.utils import timezone
@@ -7,12 +8,17 @@ from django.db import transaction
 
 class Category(models.Model):
     name = models.CharField(max_length=30, verbose_name=_("Name"))
+    slug = models.SlugField(unique=False, verbose_name=_("Slug"), blank=True, null=True)
 
     def __str__(self):
         return self.name
 
     class Meta:
         verbose_name_plural = _("Categories")
+
+    # def save(self, *args, **kwargs):
+    #     if not self.slug:
+    #         self.slug = slugify(self.name)
 
 
 class Debate(models.Model):
@@ -56,7 +62,7 @@ class Debate(models.Model):
 
     def finish_debate(self):
         winner = self.debate_arguments.select_related('author').order_by('-vote_count').first()
-        if not winner:
+        if not winner or winner.vote_count == 0:
             return
 
         reward_xp = 150

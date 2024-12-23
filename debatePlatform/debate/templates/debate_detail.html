@@ -16,7 +16,8 @@
                     <p class="lead">{{ debate.description }}</p>
                     <p class="text-muted">
                         Category: {{ debate.category.name }} |
-                        Created by: {{ debate.author.username }}
+                        Created by: <a href="{% url 'profile' debate.author.slug %}" class="user_link"
+                                       style="color: blueviolet">{{ debate.author.username }}</a>
                     </p>
                 </div>
                 <div class="col-md-4">
@@ -59,7 +60,9 @@
                             <p class="fs-4 mb-4">{{ winning_argument.text }}</p>
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <span class="fs-5">By {{ winning_argument.author.username }}</span>
+                                    <span class="fs-5">By <a href="{% url 'profile' winning_argument.author.slug %}"
+                                                             class="user_link"
+                                                             style="color: orangered">{{ winning_argument.author.username }}</a></span>
                                 </div>
                                 <div>
                                     <span class="badge bg-primary fs-5">{{ winning_argument.vote_count }} votes</span>
@@ -86,7 +89,7 @@
                         <label class="form-label">Your Position</label>
                         <select name="side" class="form-select">
                             <option value="Pro">Pro</option>
-                            <option value="Con">Con</option>
+                            <option value="Con">Counter</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -98,7 +101,6 @@
             </div>
         </div>
     {% endif %}
-
     <div class="row">
         <div class="col-md-6">
             <h3>Pro Arguments</h3>
@@ -107,11 +109,22 @@
                     <div class="argument pro-argument">
                         <p>{{ argument.text }}</p>
                         <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">By {{ argument.author.username }}</small>
+                            <small class="text-muted">By <a href="{% url 'profile' argument.author.slug %}"
+                                                            class="user_link"
+                                                            style="color: orangered">{{ argument.author.username }}</a></small>
                             <div>
-                            <span class="vote-button" data-argument-id="{{ argument.id }}">
-                                <i class="fas fa-arrow-up"></i>
-                            </span>
+                                {% if argument.author != user %}
+                                    <form action="{% url 'vote' argument.id %}" method="post">
+                                        {% csrf_token %}
+                                        <button
+                                                class="btn btn-sm {% if argument in user.voted_arguments.all %}btn-primary{% else %}btn-outline-primary{% endif %} vote-button"
+                                                data-argument-id="{{ argument.id }}"
+                                                {% if argument in user.user_votes.all %}disabled{% endif %}
+                                        >
+                                            <i class="fas fa-arrow-up"></i> Vote
+                                        </button>
+                                    </form>
+                                {% endif %}
                                 <span class="ms-1">{{ argument.vote_count }} votes</span>
                             </div>
                         </div>
@@ -120,17 +133,28 @@
             {% endfor %}
         </div>
         <div class="col-md-6">
-            <h3>Con Arguments</h3>
+            <h3>Counter Arguments</h3>
             {% for argument in debate.debate_arguments.all %}
                 {% if argument.side == 'Con' %}
                     <div class="argument con-argument">
                         <p>{{ argument.text }}</p>
                         <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">By {{ argument.author.username }}</small>
+                            <small class="text-muted">By <a href="{% url 'profile' argument.author.slug %}"
+                                                            class="user_link"
+                                                            style="color: orangered">{{ argument.author.username }}</a></small>
                             <div>
-                            <span class="vote-button" data-argument-id="{{ argument.id }}">
-                                <i class="fas fa-arrow-up"></i>
-                            </span>
+                                {% if argument.author != user %}
+                                    <form action="{% url 'vote' argument.id %}" method="post">
+                                        {% csrf_token %}
+                                        <button
+                                                class="btn btn-sm {% if argument in user.voted_arguments.all %}btn-primary{% else %}btn-outline-primary{% endif %} vote-button"
+                                                data-argument-id="{{ argument.id }}"
+                                                {% if argument in user.user_votes.all %}disabled{% endif %}
+                                        >
+                                            <i class="fas fa-arrow-up"></i> Vote
+                                        </button>
+                                    </form>
+                                {% endif %}
                                 <span class="ms-1">{{ argument.vote_count }} votes</span>
                             </div>
                         </div>

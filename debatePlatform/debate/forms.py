@@ -1,4 +1,4 @@
-from django.forms import ModelForm, ValidationError
+from django.forms import ModelForm, ValidationError, Form, CharField
 from .models import Debate, Argument
 from django.utils import timezone
 
@@ -27,3 +27,5 @@ class CreateArgumentForm(ModelForm):
         fields = ['side', 'text']
 
 
+class SearchForm(Form):
+    query = CharField(max_length=100, label='Search')
