@@ -1,6 +1,4 @@
 from django.urls import path
-from django.views.decorators.cache import cache_page
-
 from .views import (DebateListing,
                     DebateDetailView,
                     CreateDebateView,
@@ -10,7 +8,9 @@ from .views import (DebateListing,
                     VoteView,
                     SearchView,
                     CategoryView,
-                    FilterView)
+                    FilterView,
+                    DeleteDebateView,
+                    DeleteArgumentView)
 
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
@@ -23,4 +23,6 @@ urlpatterns = [
     path('search/', SearchView.as_view(), name='search'),
     path('category/<slug:slug>/', CategoryView.as_view(), name='category'),
     path('filter/', FilterView.as_view(), name='filter'),
+    path('<int:debate_id>/delete-debate/', DeleteDebateView.as_view(), name='delete_debate'),
+    path('<int:argument_id>/delete-argument/', DeleteArgumentView.as_view(), name='delete_argument')
 ]

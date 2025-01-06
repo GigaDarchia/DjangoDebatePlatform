@@ -6,9 +6,20 @@
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h2 class="mb-0">{{ debate.title }}</h2>
-            <span class="badge {% if debate.status == 'Ongoing' %}bg-success{% elif debate.status == 'Scheduled' %}bg-primary{% else %}bg-secondary{% endif %}">
-            {{ debate.status }}
-        </span>
+            <div class="d-flex align-items-center">
+                <span class="badge {% if debate.status == 'Ongoing' %}bg-success{% elif debate.status == 'Scheduled' %}bg-primary{% else %}bg-secondary{% endif %} me-2">
+                    {{ debate.status }}
+                </span>
+                {% if user.is_staff or debate.author == user %}
+                    <form method="post" action="{% url 'delete_debate' debate.id %}" class="d-inline"
+                          onsubmit="return confirm('Are you sure you want to delete this debate? This action cannot be undone.');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-trash"></i> Delete Debate
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
         </div>
         <div class="card-body">
             <div class="row">
@@ -112,9 +123,9 @@
                             <small class="text-muted">By <a href="{% url 'profile' argument.author.slug %}"
                                                             class="user_link"
                                                             style="color: orangered">{{ argument.author.username }}</a></small>
-                            <div>
+                            <div class="d-flex align-items-center">
                                 {% if argument.author != user %}
-                                    <form action="{% url 'vote' argument.id %}" method="post">
+                                    <form action="{% url 'vote' argument.id %}" method="post" class="me-2">
                                         {% csrf_token %}
                                         <button
                                                 class="btn btn-sm {% if argument in user.voted_arguments.all %}btn-primary{% else %}btn-outline-primary{% endif %} vote-button"
@@ -125,7 +136,17 @@
                                         </button>
                                     </form>
                                 {% endif %}
-                                <span class="ms-1">{{ argument.vote_count }} votes</span>
+                                <span class="me-2">{{ argument.vote_count }} votes</span>
+                                {% if user == argument.author or user.is_staff %}
+                                    <form method="post" action="{% url 'delete_argument' argument.id %}"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Are you sure you want to delete this argument?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-trash">Delete</i>
+                                        </button>
+                                    </form>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -142,9 +163,9 @@
                             <small class="text-muted">By <a href="{% url 'profile' argument.author.slug %}"
                                                             class="user_link"
                                                             style="color: orangered">{{ argument.author.username }}</a></small>
-                            <div>
+                            <div class="d-flex align-items-center">
                                 {% if argument.author != user %}
-                                    <form action="{% url 'vote' argument.id %}" method="post">
+                                    <form action="{% url 'vote' argument.id %}" method="post" class="me-2">
                                         {% csrf_token %}
                                         <button
                                                 class="btn btn-sm {% if argument in user.voted_arguments.all %}btn-primary{% else %}btn-outline-primary{% endif %} vote-button"
@@ -155,7 +176,17 @@
                                         </button>
                                     </form>
                                 {% endif %}
-                                <span class="ms-1">{{ argument.vote_count }} votes</span>
+                                <span class="me-2">{{ argument.vote_count }} votes</span>
+                                {% if user == argument.author or user.is_staff %}
+                                    <form method="post" action="{% url 'delete_argument' argument.id %}"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Are you sure you want to delete this argument?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-trash">Delete</i>
+                                        </button>
+                                    </form>
+                                {% endif %}
                             </div>
                         </div>
                     </div>

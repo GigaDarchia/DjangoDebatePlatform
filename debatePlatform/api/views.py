@@ -250,3 +250,4 @@ class JoinDebateView(views.APIView):
         debate.save()
 
         return Response({"message": "You have joined the debate."}, status=status.HTTP_200_OK)
+

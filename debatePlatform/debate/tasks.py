@@ -12,4 +12,3 @@ def update_debate_status(self):
         debate.save()
 
     print("Debate status updated")
-

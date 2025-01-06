@@ -12,6 +12,7 @@ class ProfileView(generic.DetailView):
     slug_field = 'slug'
     slug_url_kwarg = 'user_slug'
     context_object_name = 'profile_user'
+    queryset = User.objects.prefetch_related('author_debates', 'participated_debates')
 
 
 class LogInView(LoginView):
@@ -32,3 +33,11 @@ class RegisterView(generic.CreateView):
         print(f"User create successfully: {user}")
         return super().form_valid(form)
 
+class UpdateProfilePicture(generic.UpdateView):
+    model = User
+    fields = ['profile_picture']
+    success_url = reverse_lazy('home')
+    pk_url_kwarg = 'user_slug'
+
+    def get_success_url(self):
+        return self.request.META.get('HTTP_REFERER')

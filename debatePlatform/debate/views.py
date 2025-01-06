@@ -136,7 +136,9 @@ class HomeView(generic.TemplateView):
         users = User.objects.all()
         debates = Debate.objects.prefetch_related('participants').select_related('category').annotate(
             participant_count=models.Count('participants'))
+
         debates = list(debates)
+        users= list(users)
 
         context = super().get_context_data(**kwargs)
 
@@ -147,8 +149,8 @@ class HomeView(generic.TemplateView):
                                            key=lambda d: d.created_at)[:5]
         context['active_debates'] = sorted((debate for debate in debates if debate.status == "Ongoing"),
                                            key=lambda d: d.created_at)[:5]
-        context['xp_leaderboard'] = users.order_by('-xp')[:10]
-        context['win_leaderboard'] = users.order_by('-wins')[:10]
+        context['xp_leaderboard'] = sorted(users, key=lambda u: u.xp, reverse=True)[:10]
+        context['win_leaderboard'] = sorted(users, key=lambda u: u.wins, reverse=True)[:10]
         return context
 
 
@@ -183,7 +185,7 @@ class VoteView(LoginRequiredMixin, View):
             User.objects.filter(id=argument.author.id).update(xp=models.F('xp') + 2)
             argument.save()
 
-        messages.success(request, "Your vote has been submitted!")
+        # messages.success(request, "Your vote has been submitted!")
         return redirect(request.META.get('HTTP_REFERER'))
 
 
@@ -232,6 +234,7 @@ class CategoryView(generic.ListView):
     results are displayed in a paginated format in the specified template.
 
     """
+
     model = Debate
     template_name = 'debate_list.html'
     paginate_by = 8
@@ -274,3 +277,49 @@ class FilterView(generic.ListView):
             debates = debates.filter(category_id=category_id)
 
         return debates
+
+
+class DeleteDebateView(LoginRequiredMixin, generic.DeleteView):  # For Moderators and Admins
+    """
+    View that handles deletion of the debate instances.
+    Only debate authors and staff members (moderators, admins) can delete debates.
+    """
+    model = Debate
+    success_url = reverse_lazy('debate_listing')
+    pk_url_kwarg = 'debate_id'
+
+    def dispatch(self, request, *args, **kwargs):
+        debate = Debate.objects.get(id=kwargs['debate_id']).select_related('author')
+        if not request.user.is_staff and debate.author != request.user:
+            messages.error(request, "You do not have permission to delete this debate.")
+            return redirect(request.META.get('HTTP_REFERER'), reverse_lazy('debate_listing'))
+        return super().dispatch(request, *args, **kwargs)
+
+
+
+class DeleteArgumentView(LoginRequiredMixin, generic.DeleteView): # For Moderators Only
+    """
+    View that handles deletion of argument instances.
+    Only argument authors themselves and staff members (moderators, admins) can delete arguments.
+    """
+    model = Argument
+    success_url = reverse_lazy('debate_listing')
+    pk_url_kwarg = 'argument_id'
+
+    def get_success_url(self):
+        return self.request.META.get('HTTP_REFERER')
+
+    @transaction.atomic
+    def delete(self, request, *args, **kwargs):
+        argument = Argument.objects.get(id=kwargs.get('argument_id'))
+        user = argument.author
+        user.xp = models.F('xp') - argument.vote_count * 2
+        user.save(update_fields=['xp'])
+        return super().delete(request, *args, **kwargs)
+
+    def dispatch(self, request, *args, **kwargs):
+        argument = Argument.objects.select_related('author').get(id=kwargs['argument_id'])
+        if not request.user.is_staff and argument.author != request.user:
+            messages.error(request, "You do not have permission to delete this argument.")
+            return redirect(request.META.get('HTTP_REFERER'), reverse_lazy('debate_listing'))
+        return super().dispatch(request, *args, **kwargs)
